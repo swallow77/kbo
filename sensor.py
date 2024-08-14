@@ -1,11 +1,9 @@
+
 import requests
 from bs4 import BeautifulSoup
-import voluptuous as vol
 from datetime import timedelta
-
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import HomeAssistantType, ConfigType, DiscoveryInfoType
 
 SCAN_INTERVAL = timedelta(seconds=10)
@@ -42,12 +40,15 @@ class KboScoreSensor(SensorEntity):
 
             # HTML 파싱 및 점수 추출
             scores = []
-            games = soup.find_all('div', class_='score')  # 실제 클래스 이름으로 수정 필요
+            games = soup.find_all('div', class_='score')  # 각 게임 정보를 담고 있는 클래스 (이 부분은 실제 확인 필요)
+
+            # 각 게임에 대한 정보 추출
             for game in games:
-                team1 = game.find('div', class_='team1').text.strip()
-                team2 = game.find('div', class_='team2').text.strip()
-                score1 = game.find('div', class_='score1').text.strip()
-                score2 = game.find('div', class_='score2').text.strip()
+                team1 = game.find('span', class_='teamT').text.strip()  # 팀1
+                team2 = game.find_all('span', class_='teamT')[1].text.strip()  # 팀2
+                score1 = game.find_all('span', class_='point')[0].text.strip()  # 팀1 점수
+                score2 = game.find_all('span', class_='point')[1].text.strip()  # 팀2 점수
+                
                 scores.append({
                     'team1': team1, 
                     'team2': team2, 

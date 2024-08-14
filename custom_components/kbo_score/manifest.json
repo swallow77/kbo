@@ -2,7 +2,7 @@
   "domain": "kbo_score",
   "name": "KBO Score Sensor",
   "version": "1.0",
-  "documentation": "https://github.com/yourgithub/kbo_score",
+  "documentation": "https://github.com/swallow77/kbo_score",
   "dependencies": [],
   "codeowners": ["@yourgithub"],
   "requirements": ["requests", "beautifulsoup4"]

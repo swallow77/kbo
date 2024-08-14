@@ -43,10 +43,10 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType = None,
 ):
-    async_add_entities([KboSensor()])
+    async_add_entities([KboScoreSensor()])
 
 
-class KboSensor(SensorEntity):
+class KboScoreSensor(SensorEntity):
     def __init__(self):
         self._attr_name = "KBO Match"
         self._attr_state = None

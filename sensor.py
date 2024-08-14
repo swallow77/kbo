@@ -35,28 +35,34 @@ class KboScoreSensor(SensorEntity):
 
     def update(self):
         url = "https://www.koreabaseball.com/Schedule/ScoreBoard.aspx"
-        response = requests.get(url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # 요청 실패 시 예외 발생
+            soup = BeautifulSoup(response.content, 'html.parser')
 
-        # HTML 파싱 및 점수 추출
-        scores = []
-        games = soup.find_all('div', class_='score')
-        for game in games:
-            team1 = game.find('div', class_='team1').text.strip()
-            team2 = game.find('div', class_='team2').text.strip()
-            score1 = game.find('div', class_='score1').text.strip()
-            score2 = game.find('div', class_='score2').text.strip()
-            scores.append({
-                'team1': team1, 
-                'team2': team2, 
-                'score1': score1, 
-                'score2': score2
-            })
+            # HTML 파싱 및 점수 추출
+            scores = []
+            games = soup.find_all('div', class_='score')  # 실제 클래스 이름으로 수정 필요
+            for game in games:
+                team1 = game.find('div', class_='team1').text.strip()
+                team2 = game.find('div', class_='team2').text.strip()
+                score1 = game.find('div', class_='score1').text.strip()
+                score2 = game.find('div', class_='score2').text.strip()
+                scores.append({
+                    'team1': team1, 
+                    'team2': team2, 
+                    'score1': score1, 
+                    'score2': score2
+                })
 
-        # 첫 번째 경기 정보를 상태로 설정
-        if scores:
-            first_game = scores[0]
-            self._state = f"{first_game['team1']} {first_game['score1']} - {first_game['score2']} {first_game['team2']}"
-            self._attributes = first_game
-        else:
-            self._state = "No games found"
+            # 첫 번째 경기 정보를 상태로 설정
+            if scores:
+                first_game = scores[0]
+                self._state = f"{first_game['team1']} {first_game['score1']} - {first_game['score2']} {first_game['team2']}"
+                self._attributes = first_game
+            else:
+                self._state = "No games found"
+                self._attributes = {}
+        except requests.RequestException as e:
+            self._state = "Error fetching data"
+            self._attributes = {'error': str(e)}

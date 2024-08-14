@@ -1,0 +1,9 @@
+{
+  "domain": "kbo_score",
+  "name": "KBO Score Sensor",
+  "version": "1.0",
+  "documentation": "https://github.com/yourgithub/kbo_score",
+  "dependencies": [],
+  "codeowners": ["@yourgithub"],
+  "requirements": ["requests", "beautifulsoup4"]
+}

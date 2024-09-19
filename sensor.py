@@ -66,24 +66,28 @@ class KboScoreSensor(SensorEntity):
 
 def get_kbo_scores():
     url = "https://www.koreabaseball.com/Schedule/ScoreBoard.aspx"
-    response = requests.get(url)
-    response.raise_for_status()  # 에러 발생 시 예외 처리
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
 
-    soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, 'html.parser')
 
-    scores = []
-    for i in range(1, 6):  # 5개 경기
-        home_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(1)")
-        away_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(3)")
-        home_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(1)")
-        away_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(3)")
+        scores = []
+        for i in range(1, 6):
+            home_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(1)")
+            away_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(3)")
+            home_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(1)")
+            away_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(3)")
 
-        # None 처리 추가
-        home_team = home_team_element.text.strip() if home_team_element else "팀 정보 없음"
-        away_team = away_team_element.text.strip() if away_team_element else "팀 정보 없음"
-        home_score = home_score_element.text.strip() if home_score_element else "점수 정보 없음"
-        away_score = away_score_element.text.strip() if away_score_element else "점수 정보 없음"
+            home_team = home_team_element.text.strip() if home_team_element else "팀 정보 없음"
+            away_team = away_team_element.text.strip() if away_team_element else "팀 정보 없음"
+            home_score = home_score_element.text.strip() if home_score_element else "점수 정보 없음"
+            away_score = away_score_element.text.strip() if away_score_element else "점수 정보 없음"
 
-        scores.append(f"{home_team}({home_score}):{away_team}({away_score})")
+            scores.append(f"{home_team}({home_score}):{away_team}({away_score})")
 
-    return scores
+        return scores
+
+    except requests.exceptions.RequestException as e:
+        _LOGGER.error("Error fetching KBO scores: %s", e)
+        return []  # 빈 리스트 반환하여 에러 처리

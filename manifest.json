@@ -1,9 +1,9 @@
 {
-  "domain": "kbo_score",
-  "name": "KBO Score Sensor",
-  "version": "1.0",
-  "documentation": "https://github.com/yourgithub/kbo_score",
+  "domain": "kbo_scores",
+  "name": "KBO Scores",
+  "version": "1.0.0",
+  "documentation": "https://www.example.com/kbo_scores",  # 필요한 경우 문서 링크 추가
   "dependencies": [],
-  "codeowners": ["@yourgithub"],
-  "requirements": ["requests", "beautifulsoup4"]
+  "codeowners": ["@your_github_username"],  # 필요한 경우 GitHub 사용자 이름 추가
+  "requirements": ["beautifulsoup4", "requests"]
 }

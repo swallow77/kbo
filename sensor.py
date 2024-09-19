@@ -1,92 +1,56 @@
-"""KBO Scores Sensor for Home Assistant"""
-
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-import logging
 import requests
 from bs4 import BeautifulSoup
-import asyncio
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.const import CONF_SCAN_INTERVAL
 
-_LOGGER = logging.getLogger(__name__)
+class KboScoresSensor(Entity):
+    """Representation of a KBO scores sensor."""
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the KBO Scores sensor platform."""
+    def __init__(self, name, api_url):
+        self._name = name
+        self._api_url = api_url
+        self._state = None
 
-    async def async_update_data():
-        """Fetch data from the KBO website."""
-        try:
-            return get_kbo_scores()
-        except Exception as err:
-            raise UpdateFailed(f"Error communicating with KBO website: {err}")
+    @property
+    def name(self):
+        return self._name
 
+    @property
+    def state(self):
+        return self._state
+
+    async def async_update(self):
+        """Fetch new state data for the sensor."""
+        response = requests.get(self._api_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        scores = []
+        games = soup.select('div.score')  # 실제 소스에 맞게 선택자 수정 필요
+
+        for game in games[:5]:
+            teams = game.select('.team')  # 팀 정보 선택
+            score_a = game.select('.score_a')[0].text.strip()
+            score_b = game.select('.score_b')[0].text.strip()
+
+            team_a_name = teams[0].text.strip()
+            team_b_name = teams[1].text.strip()
+
+            scores.append(f"{team_a_name} ({score_a}) : {team_b_name} ({score_b})")
+
+        self._state = ", ".join(scores)
+
+async def async_setup_entry(hass, entry):
+    """Set up the sensor from a config entry."""
+    api_url = "https://www.koreabaseball.com/Schedule/ScoreBoard.aspx"
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name="KBO Scores",
-        update_method=async_update_data,
-        update_interval=asyncio.timedelta(seconds=60),  # 1분마다 업데이트
+        update_method=KboScoresSensor.async_update,
+        update_interval=timedelta(seconds=CONF_SCAN_INTERVAL),
     )
 
+    sensor = KboScoresSensor("KBO 경기 점수", api_url)
     await coordinator.async_refresh()
-
-    entities = []
-    for i in range(5):  # 5개 경기
-        entities.append(KboScoreSensor(coordinator, i + 1))
-    async_add_entities(entities)
-
-
-class KboScoreSensor(SensorEntity):
-    """Representation of a KBO Score sensor."""
-
-    def __init__(self, coordinator, game_number):
-        """Initialize the sensor."""
-        self.coordinator = coordinator
-        self.game_number = game_number
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"KBO Game {self.game_number}"
-
-    @property
-    def unique_id(self):
-        """Return the unique ID of the sensor."""
-        return f"kbo_game_{self.game_number}"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self.coordinator.data[self.game_number - 1]
-
-    @property
-    def available(self):
-        """Return if entity is available."""
-        return self.coordinator.last_update_success
-
-def get_kbo_scores():
-    url = "https://www.koreabaseball.com/Schedule/ScoreBoard.aspx"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        scores = []
-        for i in range(1, 6):
-            home_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(1)")
-            away_team_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.team-name:nth-child(3)")
-            home_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(1)")
-            away_score_element = soup.select_one(f"#contents > div.today-game > div.live-score > div:nth-child({i}) > div.team > span.score:nth-child(3)")
-
-            home_team = home_team_element.text.strip() if home_team_element else "팀 정보 없음"
-            away_team = away_team_element.text.strip() if away_team_element else "팀 정보 없음"
-            home_score = home_score_element.text.strip() if home_score_element else "점수 정보 없음"
-            away_score = away_score_element.text.strip() if away_score_element else "점수 정보 없음"
-
-            scores.append(f"{home_team}({home_score}):{away_team}({away_score})")
-
-        return scores
-
-    except requests.exceptions.RequestException as e:
-        _LOGGER.error("Error fetching KBO scores: %s", e)
-        return []  # 빈 리스트 반환하여 에러 처리
+    return True
